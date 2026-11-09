@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BHPH Micro-Lot Financial & Yield Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 850: '#111827', 900: '#0f172a', 950: '#020617' },
+                        brand: { green: '#10b981', blue: '#3b82f6', amber: '#f59e0b', red: '#ef4444', purple: '#8b5cf6' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .input-badge { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.875rem; pointer-events: none; }
+        .currency-input { padding-left: 26px !important; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen pb-12">
+
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 backdrop-blur bg-opacity-90">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
+                    <i class="fa-solid fa-car-side text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-white leading-tight">BHPH Micro-Lot Yield & Profit Calculator</h1>
+                    <p class="text-xs text-slate-400">Internal Dealer Underwriting • Orange County, FL (6% State + 0.5% Surtax)</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                    <i class="fa-solid fa-warehouse text-xs"></i> 6-Car Capacity Tracker
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <i class="fa-solid fa-shield-halved text-xs"></i> Cash-Flow First Model
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Total Cash Basis Card -->
+            <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 relative overflow-hidden shadow-lg">
+                <div class="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Vehicle Basis</p>
+                        <h3 class="text-2xl font-black text-amber-400 mt-1" id="metricTotalBasis">$0</h3>
+                        <p class="text-xs text-slate-500 mt-1">Acquisition + Recon + Fees</p>
+                    </div>
+                    <div class="p-2 bg-amber-500/10 text-amber-400 rounded-lg text-lg"><i class="fa-solid fa-receipt"></i></div>
+                </div>
+            </div>
+
+            <!-- Net Out of Pocket Card -->
+            <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 relative overflow-hidden shadow-lg">
+                <div class="absolute top-0 left-0 w-1 h-full bg-rose-500"></div>
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Day-1 Cash Out of Pocket</p>
+                        <h3 class="text-2xl font-black text-rose-400 mt-1" id="metricOutofPocket">$0</h3>
+                        <p class="text-xs text-slate-500 mt-1">Capital tied up after Down Payment</p>
+                    </div>
+                    <div class="p-2 bg-rose-500/10 text-rose-400 rounded-lg text-lg"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                </div>
+            </div>
+
+            <!-- Payback Time Card -->
+            <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 relative overflow-hidden shadow-lg">
+                <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Capital Payback Horizon</p>
+                        <h3 class="text-2xl font-black text-blue-400 mt-1" id="metricPaybackMonths">0.0 Mos</h3>
+                        <p class="text-xs text-slate-500 mt-1">Time to recover 100% cash</p>
+                    </div>
+                    <div class="p-2 bg-blue-500/10 text-blue-400 rounded-lg text-lg"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                </div>
+            </div>
+
+            <!-- Full Term Net Profit Card -->
+            <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 relative overflow-hidden shadow-lg">
+                <div class="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Scheduled Gross Profit</p>
+                        <h3 class="text-2xl font-black text-emerald-400 mt-1" id="metricGrossProfit">$0</h3>
+                        <p class="text-xs text-emerald-500/80 mt-1" id="metricROI">0% Return on Capital</p>
+                    </div>
+                    <div class="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg text-lg"><i class="fa-solid fa-chart-line"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- LEFT COLUMN: INPUT CONTROLS (5 COLS) -->
+            <div class="lg:col-span-5 space-y-6">
+
+                <!-- Vehicle Acquisition & Capital Costs -->
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-wrench text-amber-400"></i> 1. Capital Cost & Vehicle Basis
+                        </h2>
+                        <span class="text-xs text-slate-500 font-mono">Cost Basis</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Auction Buy Price</label>
+                            <div class="relative">
+                                <span class="input-badge">$</span>
+                                <input type="number" id="acqPrice" value="3800" step="100" class="currency-input w-full bg-slate-950 border border-slate-700 rounded-lg py-1.5 pr-2 text-sm text-right text-white font-medium focus:border-blue-500 focus:outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Auction Fee / Transport</label>
+                            <div class="relative">
+                                <span class="input-badge">$</span>
+                                <input type="number" id="auctionFee" value="375" step="25" class="currency-input w-full bg-slate-950 border border-slate-700 rounded-lg py-1.5 pr-2 text-sm text-right text-white font-medium focus:border-blue-500 focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Recon / Parts</label>
+                            <div class="relative">
+                                <span class="input-badge">$</span>
+                                <input type="number" id="reconCost" value="850" step="50" class="currency-input w-full bg-slate-950 border border-slate-700 rounded-lg py-1.5 pr-2 text-sm text-right text-white font-medium focus:border-blue-500 focus:outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">GPS & Install</label>
+                            <div class="relative">
+                                <span class="input-badge">$</span>
+                                <input type="number" id="gpsCost" value="180" step="10" class="currency-input w-full bg-slate-950 border border-slate-700 rounded-lg py-1.5 pr-2 text-sm text-right text-white font-medium focus:border-blue-500 focus:outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Floorplan Fee</label>
+                            <div class="relative">
+                                <span class="input-badge">$</span>
+                                <input type="number" id="floorPlanFee" value="200" step="25" class="currency-input w-full bg-slate-950 border border-slate-700 rounded-lg py-1.5 pr-2 text-sm text-right text-white font-medium focus:border-blue-500 focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-file-contract text-blue-400"></i> 2. Contract & Retail Structure
+                        </h2>
+                        <span class="text-xs text-slate-500 font-mono">Retail Terms</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Stated Retail Price</label>
+                            <div class="relative">
+                                <span class="input-badge">$</span>
+                                <input type="number" id="salePrice" value="9495" step="100" class="currency-input w-full bg-slate-950 border border-slate-700 rounded-lg py-1.5 pr-2 text-sm text-right text-white font-medium focus:border-blue-500 focus:outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Dealer Doc Fee</label>
+                            <div class="relative">
+                                <span class="input-badge">$</span>
+                                <input type="number" id="docFee" value="499" step="25" class="currency-input w-full bg-slate-950 border border-slate-700 rounded-lg py-1.5 pr-2 text-sm text-right text-white font-medium focus:border-blue-500 focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Customer Down Payment</label>
+                            <div class="relative">
+                                <span class="input-badge">$</span>
+                                <input type="number" id="downPayment" value="1800" step="100" class="currency-input w-full bg-slate-950 border border-emerald-500/50 rounded-lg py-1.5 pr-2 text-sm text-right text-emerald-400 font-bold focus:border-emerald-500 focus:outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Interest Rate (APR %)</label>
+                            <div class="relative">
+                                <input type="number" id="apr" value="18.0" step="0.5" class="w-full bg-slate-950 border border-slate-700 rounded-lg py-1.5 px-3 text-sm text-right text-white font-medium focus:border-blue-500 focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Loan Term (Months)</label>
+                            <select id="termMonths" class="w-full bg-slate-950 border border-slate-700 rounded-lg py-1.5 px-3 text-sm text-white font-medium focus:border-blue-500 focus:outline-none">
+                                <option value="12">12 Months (1 Year)</option>
+                                <option value="18">18 Months (1.5 Years)</option>
+                                <option value="24" selected>24 Months (2 Years)</option>
+                                <option value="30">30 Months (2.5 Years)</option>
+                                <option value="36">36 Months (3 Years)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Payment Schedule</label>
+                            <select id="payFrequency" class="w-full bg-slate-950 border border-slate-700 rounded-lg py-1.5 px-3 text-sm text-white font-medium focus:border-blue-500 focus:outline-none">
+                                <option value="26" selected>Bi-Weekly (26/yr)</option>
+                                <option value="52">Weekly (52/yr)</option>
+                                <option value="12">Monthly (12/yr)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-rose-400"></i> 3. Risk & Default Underwriting
+                        </h2>
+                        <span class="text-xs text-slate-500 font-mono">Stress Test</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Default Month</label>
+                            <input type="number" id="defaultMonth" value="7" min="1" max="36" class="w-full bg-slate-950 border border-slate-700 rounded-lg py-2 px-3 text-sm text-center text-white font-semibold focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Repo Cost</label>
+                            <div class="relative">
+                                <span class="input-badge">$</span>
+                                <input type="number" id="repoCost" value="450" step="50" class="currency-input w-full bg-slate-950 border border-slate-700 rounded-lg py-2 pr-3 text-sm text-right text-white font-semibold focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Repo ACV Value</label>
+                            <div class="relative">
+                                <span class="input-badge">$</span>
+                                <input type="number" id="repoACV" value="2800" step="100" class="currency-input w-full bg-slate-950 border border-slate-700 rounded-lg py-2 pr-3 text-sm text-right text-white font-semibold focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: ANALYSIS & BREAKDOWNS (7 COLS) -->
+            <div class="lg:col-span-7 space-y-6">
+
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider">Cumulative Cash Recovery Curve</h2>
+                            <p class="text-xs text-slate-400">Breakeven is achieved when line turns green above zero</p>
+                        </div>
+                        <span class="px-2.5 py-1 bg-slate-800 text-slate-300 rounded text-xs font-mono border border-slate-700" id="lblBreakevenStatus">Payback: Month 0</span>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="cashFlowChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800">
+                    <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider mb-3 flex items-center justify-between">
+                        <span>Orange County, FL Contract Breakdown</span>
+                        <span class="text-xs font-normal text-slate-400">Orange Co. Discretionary Surtax 0.5% (Cap $5k)</span>
+                    </h2>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-950 text-slate-400 border-b border-slate-800">
+                                    <th class="p-2.5">Line Item</th>
+                                    <th class="p-2.5 text-right">Amount</th>
+                                    <th class="p-2.5">Dealership Impact</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800/60 text-slate-300">
+                                <tr>
+                                    <td class="p-2.5 font-medium">Stated Price + Doc Fee</td>
+                                    <td class="p-2.5 text-right font-mono" id="tblStatedPrice">$0</td>
+                                    <td class="p-2.5 text-slate-400">Front-End Retail Price</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2.5 font-medium">FL State Tax (6%) + Orange Co Surtax (0.5%)</td>
+                                    <td class="p-2.5 text-right font-mono" id="tblSalesTax">$0</td>
+                                    <td class="p-2.5 text-slate-400">Calculated on $5k surtax cap</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2.5 font-medium">Title, Tag & FL Lien Fee (Est.)</td>
+                                    <td class="p-2.5 text-right font-mono" id="tblTagFees">$275.00</td>
+                                    <td class="p-2.5 text-slate-400">Pass-through state DMV fee</td>
+                                </tr>
+                                <tr class="bg-slate-950 font-bold text-slate-100">
+                                    <td class="p-2.5">Total Financed Principal Balance</td>
+                                    <td class="p-2.5 text-right font-mono text-blue-400" id="tblFinanced">$0</td>
+                                    <td class="p-2.5 text-blue-400">Earning interest at APR %</td>
+                                </tr>
+                                <tr class="bg-emerald-950/30 font-bold text-emerald-300">
+                                    <td class="p-2.5">Scheduled Payment Amount</td>
+                                    <td class="p-2.5 text-right font-mono text-emerald-400" id="tblPayment">$0</td>
+                                    <td class="p-2.5 text-emerald-400" id="tblPaymentFreq">Bi-Weekly</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800">
+                    <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider mb-3">
+                        Scenario Analysis: Full Completion vs. Default Stress Test
+                    </h2>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-950 text-slate-400 border-b border-slate-800">
+                                    <th class="p-2.5">Metric</th>
+                                    <th class="p-2.5 text-right text-emerald-400">Scenario A: Paid In Full</th>
+                                    <th class="p-2.5 text-right text-amber-400">Scenario B: Default Month <span id="lblDefaultMonthTab">7</span></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800/60 text-slate-300">
+                                <tr>
+                                    <td class="p-2.5 font-medium">Customer Down Payment</td>
+                                    <td class="p-2.5 text-right font-mono" id="scenADown">$0</td>
+                                    <td class="p-2.5 text-right font-mono" id="scenBDown">$0</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2.5 font-medium">Recurring Payments Collected</td>
+                                    <td class="p-2.5 text-right font-mono" id="scenAPayments">$0</td>
+                                    <td class="p-2.5 text-right font-mono" id="scenBPayments">$0</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2.5 font-medium">Repo Cost & Recovery Value</td>
+                                    <td class="p-2.5 text-right font-mono text-slate-500">$0.00</td>
+                                    <td class="p-2.5 text-right font-mono" id="scenBRepoNet">$0</td>
+                                </tr>
+                                <tr class="bg-slate-950 font-bold">
+                                    <td class="p-2.5">Total Dealership Cash Collected</td>
+                                    <td class="p-2.5 text-right font-mono text-blue-400" id="scenATotalCash">$0</td>
+                                    <td class="p-2.5 text-right font-mono text-blue-400" id="scenBTotalCash">$0</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2.5 font-medium">Less Total Dealership Vehicle Basis</td>
+                                    <td class="p-2.5 text-right font-mono text-rose-400" id="scenABasis">-$0</td>
+                                    <td class="p-2.5 text-right font-mono text-rose-400" id="scenBBasis">-$0</td>
+                                </tr>
+                                <tr class="bg-slate-950 font-black text-sm">
+                                    <td class="p-2.5">Net Dealership Cash Profit</td>
+                                    <td class="p-2.5 text-right font-mono text-emerald-400" id="scenANetProfit">$0</td>
+                                    <td class="p-2.5 text-right font-mono text-amber-400" id="scenBNetProfit">$0</td>
+                                </tr>
+                                <tr class="font-bold">
+                                    <td class="p-2.5">Dealership Cash ROI %</td>
+                                    <td class="p-2.5 text-right font-mono text-emerald-400" id="scenAROI">0%</td>
+                                    <td class="p-2.5 text-right font-mono text-amber-400" id="scenBROI">0%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-layer-group text-purple-400"></i> 6-Car Lot Capital Model
+                        </h2>
+                        <span class="text-xs text-purple-400 font-semibold bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">Micro Lot Portfolio</span>
+                    </div>
+                    <p class="text-xs text-slate-400">If all 6 inventory slots on your lot are financed using this exact deal structure:</p>
+
+                    <div class="grid grid-cols-3 gap-3 text-center pt-2">
+                        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                            <p class="text-xs text-slate-500">Total Lot Capital Tied Up</p>
+                            <p class="text-lg font-bold text-rose-400 mt-1" id="lotTotalCapital">$0</p>
+                        </div>
+                        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                            <p class="text-xs text-slate-500">Lot Monthly Cash Inflow</p>
+                            <p class="text-lg font-bold text-emerald-400 mt-1" id="lotMonthlyCash">$0</p>
+                        </div>
+                        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                            <p class="text-xs text-slate-500">Total Lot Gross Profit</p>
+                            <p class="text-lg font-bold text-purple-400 mt-1" id="lotTotalProfit">$0</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let cashChart = null;
+
+        function calculateDeal() {
+            const acqPrice = parseFloat(document.getElementById('acqPrice').value) || 0;
+            const auctionFee = parseFloat(document.getElementById('auctionFee').value) || 0;
+            const reconCost = parseFloat(document.getElementById('reconCost').value) || 0;
+            const gpsCost = parseFloat(document.getElementById('gpsCost').value) || 0;
+            const floorPlanFee = parseFloat(document.getElementById('floorPlanFee').value) || 0;
+
+            const salePrice = parseFloat(document.getElementById('salePrice').value) || 0;
+            const docFee = parseFloat(document.getElementById('docFee').value) || 0;
+            const downPayment = parseFloat(document.getElementById('downPayment').value) || 0;
+            const apr = (parseFloat(document.getElementById('apr').value) || 0) / 100;
+            const termMonths = parseInt(document.getElementById('termMonths').value) || 24;
+            const payFreq = parseInt(document.getElementById('payFrequency').value) || 26;
+
+            const defaultMonth = parseInt(document.getElementById('defaultMonth').value) || 7;
+            const repoCost = parseFloat(document.getElementById('repoCost').value) || 0;
+            const repoACV = parseFloat(document.getElementById('repoACV').value) || 0;
+
+            // Total Vehicle Basis
+            const totalBasis = acqPrice + auctionFee + reconCost + gpsCost + floorPlanFee;
+            const netOutofPocket = totalBasis - downPayment;
+
+            // FL Sales Tax: 6% state + 0.5% Orange County Discretionary Surtax (capped at first $5,000 of purchase price)
+            const taxableTotal = salePrice + docFee;
+            const surtaxableBase = Math.min(taxableTotal, 5000);
+            const salesTax = (taxableTotal * 0.06) + (surtaxableBase * 0.005);
+            const tagTitleFees = 275.00; // Estimated Orange County FL Title/Tag/Lien fee
+
+            const totalContractAmount = taxableTotal + salesTax + tagTitleFees;
+            const amountFinanced = Math.max(0, totalContractAmount - downPayment);
+
+            const totalPaymentsCount = Math.round((termMonths / 12) * payFreq);
+            const ratePerPeriod = apr / payFreq;
+
+            let paymentAmount = 0;
+            if (ratePerPeriod > 0) {
+                paymentAmount = (amountFinanced * ratePerPeriod * Math.pow(1 + ratePerPeriod, totalPaymentsCount)) / (Math.pow(1 + ratePerPeriod, totalPaymentsCount) - 1);
+            } else {
+                paymentAmount = amountFinanced / totalPaymentsCount;
+            }
+
+            const totalScheduledPayments = paymentAmount * totalPaymentsCount;
+            const totalInterestCollected = totalScheduledPayments - amountFinanced;
+            const grossProfitFullTerm = (downPayment + totalScheduledPayments) - totalBasis;
+            const roiFullTerm = totalBasis > 0 ? (grossProfitFullTerm / totalBasis) * 100 : 0;
+
+            const monthlyPaymentEq = paymentAmount * (payFreq / 12);
+            let paybackMonths = 0;
+            if (netOutofPocket <= 0) {
+                paybackMonths = 0;
+            } else if (monthlyPaymentEq > 0) {
+                paybackMonths = netOutofPocket / monthlyPaymentEq;
+            } else {
+                paybackMonths = 99;
+            }
+
+            const paymentsMadeBeforeDefault = Math.min(totalPaymentsCount, Math.round((defaultMonth / 12) * payFreq));
+            const cashCollectedDefault = downPayment + (paymentsMadeBeforeDefault * paymentAmount);
+            const netRepoRecovery = Math.max(0, repoACV - repoCost);
+            const totalRecoveryDefault = cashCollectedDefault + netRepoRecovery;
+            const netProfitDefault = totalRecoveryDefault - totalBasis;
+            const roiDefault = totalBasis > 0 ? (netProfitDefault / totalBasis) * 100 : 0;
+
+            document.getElementById('metricTotalBasis').textContent = formatCurr(totalBasis);
+            document.getElementById('metricOutofPocket').textContent = formatCurr(netOutofPocket);
+            document.getElementById('metricPaybackMonths').textContent = paybackMonths === 0 ? "Day 1 (100% Repaid)" : paybackMonths.toFixed(1) + " Mos";
+            document.getElementById('metricGrossProfit').textContent = formatCurr(grossProfitFullTerm);
+            document.getElementById('metricROI').textContent = `${roiFullTerm.toFixed(1)}% Return on Capital`;
+
+            // Breakdown Table
+            document.getElementById('tblStatedPrice').textContent = formatCurr(taxableTotal);
+            document.getElementById('tblSalesTax').textContent = formatCurr(salesTax);
+            document.getElementById('tblFinanced').textContent = formatCurr(amountFinanced);
+            document.getElementById('tblPayment').textContent = formatCurr(paymentAmount);
+
+            let freqLabel = "Bi-Weekly";
+            if (payFreq === 52) freqLabel = "Weekly";
+            if (payFreq === 12) freqLabel = "Monthly";
+            document.getElementById('tblPaymentFreq').textContent = `${freqLabel} (${totalPaymentsCount} Payments)`;
+
+            // Scenario Table
+            document.getElementById('lblDefaultMonthTab').textContent = defaultMonth;
+            document.getElementById('scenADown').textContent = formatCurr(downPayment);
+            document.getElementById('scenBDown').textContent = formatCurr(downPayment);
+            document.getElementById('scenAPayments').textContent = formatCurr(totalScheduledPayments);
+            document.getElementById('scenBPayments').textContent = formatCurr(paymentsMadeBeforeDefault * paymentAmount);
+            document.getElementById('scenBRepoNet').textContent = formatCurr(netRepoRecovery) + " (ACV - Fee)";
+            document.getElementById('scenATotalCash').textContent = formatCurr(downPayment + totalScheduledPayments);
+            document.getElementById('scenBTotalCash').textContent = formatCurr(totalRecoveryDefault);
+            document.getElementById('scenABasis').textContent = "-" + formatCurr(totalBasis);
+            document.getElementById('scenBBasis').textContent = "-" + formatCurr(totalBasis);
+            document.getElementById('scenANetProfit').textContent = formatCurr(grossProfitFullTerm);
+            document.getElementById('scenBNetProfit').textContent = formatCurr(netProfitDefault);
+            document.getElementById('scenAROI').textContent = roiFullTerm.toFixed(1) + "%";
+            document.getElementById('scenBROI').textContent = roiDefault.toFixed(1) + "%";
+
+            // Micro Lot Portfolio Cards (6 Cars)
+            document.getElementById('lotTotalCapital').textContent = formatCurr(netOutofPocket * 6);
+            document.getElementById('lotMonthlyCash').textContent = formatCurr(monthlyPaymentEq * 6);
+            document.getElementById('lotTotalProfit').textContent = formatCurr(grossProfitFullTerm * 6);
+
+            document.getElementById('lblBreakevenStatus').textContent = paybackMonths <= termMonths ? `Breakeven: Month ${paybackMonths.toFixed(1)}` : 'No Breakeven';
+
+            renderChart(termMonths, totalBasis, downPayment, monthlyPaymentEq);
+        }
+
+        function renderChart(termMonths, totalBasis, downPayment, monthlyPayment) {
+            const labels = ['Day 1'];
+            const cashFlowData = [downPayment - totalBasis];
+
+            for (let m = 1; m <= termMonths; m++) {
+                labels.push(`Mo ${m}`);
+                const cumulativeCash = (downPayment - totalBasis) + (m * monthlyPayment);
+                cashFlowData.push(cumulativeCash);
+            }
+
+            const ctx = document.getElementById('cashFlowChart').getContext('2d');
+
+            if (cashChart) {
+                cashChart.destroy();
+            }
+
+            cashChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Net Dealership Cash Position ($)',
+                        data: cashFlowData,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 3,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            left: 12,
+                            right: 20,
+                            top: 15,
+                            bottom: 10
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#34d399',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Net Cash: ' + formatCurr(context.raw);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(51, 65, 85, 0.4)' },
+                            ticks: { color: '#94a3b8', font: { size: 11, weight: '500' } }
+                        },
+                        y: {
+                            grid: {
+                                color: function(context) {
+                                    if (context.tick.value === 0) {
+                                        return '#f59e0b';
+                                    }
+                                    return 'rgba(51, 65, 85, 0.3)';
+                                },
+                                lineWidth: function(context) {
+                                    return context.tick.value === 0 ? 2 : 1;
+                                }
+                            },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { size: 11, weight: '500' },
+                                padding: 8,
+                                callback: function(value) {
+                                    if (value < 0) return '-$' + Math.abs(value).toLocaleString();
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function formatCurr(val) {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const inputs = document.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.addEventListener('input', calculateDeal);
+                input.addEventListener('change', calculateDeal);
+            });
+            calculateDeal();
+        });
+    </script>
+</body>
+</html>
